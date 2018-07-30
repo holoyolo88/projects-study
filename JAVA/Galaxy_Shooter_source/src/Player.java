@@ -1,71 +1,84 @@
-import java.awt.BasicStroke;
-
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.awt.*;
+import java.io.*;
 import java.media.*;
+
 import sun.audio.AudioPlayer;
 import sun.audio.AudioStream;
 
 public class Player {
 	
-	//�÷��̾� ��ġ
+	// player 좌표
 	private int x;
 	private int y;
+
+	// player 반지름
 	private int r;
 	
-	//�÷��̾� �̵� ��ġ
+	// player 이동 거리
 	private int dx;
 	private int dy;
+
+	// player 속력
 	private int speed;
 	
-	//�÷��̾� �̵� ����
+	// player 이동 방향
 	private boolean left;
 	private boolean right;
 	private boolean up;
 	private boolean down;
 	
-	//�÷��̾� ����
+	// player bullet 발사 여부
 	private boolean firing;
+
+	// player bullet 발사 시작 시각
 	private long firingTimer;
+
+	// player
 	private long firingDelay;
 	
-	//�浹 �� ȸ��
+	// enemy와 충돌 후 회복 상태 여부
 	private boolean recovering;
+
+	// enemy와 충돌 후 회복 상태 시작 시각
 	private long recoveryTimer;
 	
-	//�÷��̾� ���
+	// player life 수
 	private int life;
 	
-	//�÷��̾� ����
-	private Color c1;
-	private Color c2;
+	// player 색상
+	private Color pcolor_default;
+	private Color pcolor_recovering;
 	
-	//����
+	// player 점수
 	private int score;
 	
-	//�Ŀ�
-	private int powerLevel;
+	// player 파워
 	private int power;
-	private int[] requiredPower = {
-			1,2,3,4,5
-	};
 	
-	//����
+	// player 파워 레벨
+	private int powerLevel=0;
+	
+	// player 파워 레벨 업을 위해 요구되는 파워 수
+	private int[] requiredPower = {5,10,15};
+	
+	// player bullet 발사 효과음
 	private File bulletSound = new File("sounds/bulletSound.wav");
 	private AudioStream bulletSoundAudio;
     private InputStream bulletSoundInput;
 	
-    public boolean pause; // pause 여부
-    public static boolean Gpause;
+	// player freeze 아이템 사용 여부
+    public boolean freeze; 
 	
-    //�÷��̾� ��ǥ ��ġ, �ӵ�, ���, �Ѿ� �߻� �ӵ� ����
+	// player 일시 정지 상태 여부
+	public static boolean Ppause;
+	
+	// Player 클래스 생성자
 	public Player() {
+
 		x = GamePanel.WIDTH / 2;
-		y = GamePanel.HEIGHT / 2+20; // wave 가리지 않도록
+
+		// "W A V E" text 가림 방지를 위한 y 좌표
+		y = GamePanel.HEIGHT / 2+20; 
 		r = 5;
 		
 		dx = 0;
@@ -74,8 +87,8 @@ public class Player {
 		
 		life = 3;
 		
-		c1 = Color.WHITE;
-		c2 = Color.RED;
+		pcolor_default = Color.WHITE;
+		pcolor_recovering = Color.RED;
 		
 		firing = false;
 		firingTimer = System.nanoTime();
@@ -85,12 +98,10 @@ public class Player {
 		recoveryTimer = 0;
 		
 		score = 0;
-		pause =false;
-		Gpause = false;
+
+		freeze = false;
+		Ppause = false;
 	}
-	
-	public void setPause(boolean b) { pause = b;}
-	public static void setGpause(boolean b) { Gpause = b;}
 	
 	public int getx() { return x; }
 	public int gety() { return y; }
@@ -112,53 +123,74 @@ public class Player {
 	
 	public void addScore(int i) { score += i; }
 	
+	// life up item 획득 시 실행
 	public void gainLife() {
-		life++;
+		
+		// player life 수가 10 미만일 경우 증가
+		if(life<10)	life++;
 	}
 	
+	// enemy와 충돌 시 실행
 	public void lostLife(){
+
 		life--;
 		recovering = true;
 		recoveryTimer = System.nanoTime();
 	}
+
+	public int getPower() { return power; }
+	public int getPowerLevel() { return powerLevel; }
 	
+	public int getRequiredPower() {
+		
+		// player 파워 레벨이 최대 파워 레벨인 3일 경우
+		if (powerLevel == 3)
+		// 파워 레벨 업을 위해 요구되는 파워 수는 파워 레벨이 2일 때 요구되는 파워 수를 반환
+		return requiredPower [powerLevel -1] ;
+		// player 파워 레벨에서 파워 레벨 업을 위해 요구되는 파워 수 반환
+		else return requiredPower [powerLevel];
+	}
+	
+	// power up+1 또는 power up+2 아이템 획득 시 실행
 	public void increasePower(int i) {
+
 		power += i;
-		if (powerLevel == 4){
-			if (power > requiredPower [powerLevel]) {
-				power = requiredPower [powerLevel];
-			}
+
+		// 파워 레벨이 최대 파워 레벨인 3일 경우
+		if (powerLevel == 3){
+			// 파워를 파워 레벨이 2일 때 요구되는 파워 수로 설정
+			if (power > getRequiredPower())
+			power = getRequiredPower();
 			return;
 		}
-		if (power >= requiredPower [powerLevel]) {
-			power -= requiredPower [powerLevel];
+		// 파워가 파워 레벨 업을 위해 요구되는 파워 수보다 클 경우
+		if (power >= getRequiredPower()) {
+			// 파워를 파워 레벨 업을 위해 요구되는 파워 수만큼 감소한 후 파워 레벨 증가 
+			power -= getRequiredPower();
 			powerLevel++;
 		}
 	}
 	
-	public int getPowerLevel() { return powerLevel; }
-	public int getPower() { return power; }
-	public int getRequiredPower() {return requiredPower [powerLevel]; }
+	public void setPause(boolean b) { freeze = b;}
+	public static void setPpause(boolean b) { Ppause = b;}
 	
-	//�÷��̾��� ��ġ �����̴� ��ǥ �� ������Ʈ
+	// player 좌표 정보 업데이트
 	public void update(){
-		if(pause != true && Gpause != true) //pause 여부 판단
-		{if(left) {
-			dx = -speed;
-		}
-		if(right) {
-			dx = speed;
-		}
-		if(up) {
-			dy = -speed;
-		}
-		if(down) {
-			dy = speed;
+
+		// player freeze 아이템 사용 여부와 player pause 여부가 모두 거짓일 경우 이동할 거리 설정
+		if(freeze != true && Ppause != true){
+
+			if(left) { dx = -speed; } 
+			if(right) { dx = speed;	}
+			if(up) { dy = -speed; }
+			if(down) { dy = speed; }
+		
+			x += dx;
+			y += dy;
 		}
 		
-		x += dx;
-		y += dy;}
-		
+		// 이동할 좌표가 panel 범위를 벗어난 경우 이동할 좌표 재설정
+		if (x < r && dx < 0)
 		if(x < r) x = r;
 		if(y < r) y = r;
 		if(x > GamePanel.WIDTH - r) x = GamePanel.WIDTH - r;
@@ -167,25 +199,32 @@ public class Player {
 		dx = 0;
 		dy = 0;
 		
-		if (firing) {
+		if (firing && freeze != true && Ppause != true) { // pause가 아닐 경우 firing
 			long elapsed = (System.nanoTime() - firingTimer) / 1000000;
 			
 			if (elapsed > firingDelay) {
 				firingTimer = System.nanoTime();
 				
-				if(powerLevel < 2 ) {
+				if(powerLevel < 1 ) {
 					GamePanel.bullets.add(new Bullet(270, x, y));
 					AudioPlayer.player.start(bulletSoundAudio);
 				}
-				else if(powerLevel < 4){
+				else if(powerLevel < 2){
 					GamePanel.bullets.add(new Bullet(270, x+5, y));
 					GamePanel.bullets.add(new Bullet(270, x-5, y));
 					AudioPlayer.player.start(bulletSoundAudio);
 				}
-				else {
+				else if (powerLevel <3){
 					GamePanel.bullets.add(new Bullet(270, x, y));
 					GamePanel.bullets.add(new Bullet(275, x+5, y));
 					GamePanel.bullets.add(new Bullet(265, x-5, y));
+					AudioPlayer.player.start(bulletSoundAudio);
+				}
+				else {
+					GamePanel.bullets.add(new Bullet(270, x, y));
+					GamePanel.bullets.add(new Bullet(0, x+10, y));
+					GamePanel.bullets.add(new Bullet(90, x, y+10));
+					GamePanel.bullets.add(new Bullet (180, x-10,y));
 					AudioPlayer.player.start(bulletSoundAudio);
 				}
 			}
@@ -211,17 +250,17 @@ public class Player {
 	public void draw(Graphics2D g) {
 		
 		if(recovering){
-			g.setColor(c2);
+			g.setColor(pcolor_recovering);
 			g.fillOval(x - r,  y - r, 2 * r,  2 * r);
 			
 			g.setStroke(new BasicStroke(2));
-			g.setColor(c2.darker());
+			g.setColor(pcolor_recovering.darker());
 			g.drawOval(x - r, y - r, 2 * r, 2 * r);
 		} else {
-			g.setColor(c1);
+			g.setColor(pcolor_default);
 			g.fillOval(x - r,  y - r, 2 * r,  2 * r);
 			g.setStroke(new BasicStroke(2));
-			g.setColor(c1.darker());
+			g.setColor(pcolor_default.darker());
 			g.drawOval(x - r, y - r, 2 * r, 2 * r);
 		}
 		
