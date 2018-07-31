@@ -1,152 +1,208 @@
-import java.awt.*;
-import javax.swing.*;
-import java.io.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
+import javax.swing.JPanel;
 
-import java.lang.Thread;
 import sun.audio.AudioPlayer;
 import sun.audio.AudioStream;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
 
-	public static int WIDTH = 800; // ����
-	public static int HEIGHT = 600; // ����
+	// 패널 넓이
+	public static int WIDTH = 800;
+	public static int HEIGHT = 600;
 
-	private Thread thread; // Thread ����
-	private Thread threadnew;
-	private boolean running; // ���� ���� �ľ��� ���� running ����
+	// Thread 클래스 참조 변수
+	private Thread thread;
 
-	private BufferedImage image; // �̹��� ��������
-	private Graphics2D g; // �̹��� ������, 2D �׷����� �����ϱ� ���� ����
+	// 게임 실행 여부
+	private boolean running;
 
-	private int FPS = 30; // ������ ������ ��ġ ����
-	private int averageFPS; // ��� FPS ��ġ
+	// BufferedImage 클래스 참조 변수
+	private BufferedImage image;
+	// Graphics2D 클래스 참조 변수
+	private Graphics2D g;
 
-	public static Player player; // Player Ŭ���� ���
+	// 게임 프레임 수와 평균 프레임 수
+	private int FPS = 30;
+	private int averageFPS;
 
-	public static ArrayList<Bullet> bullets; // �Ѿ��� �迭�� ���� �ҷ�����
-	public static ArrayList<Enemy> enemies; // ���� �迭�� ���� �ҷ�����
-	public static ArrayList<Item> items; // �Ŀ� ���� �迭�� ���� �ҷ�����
-	public static ArrayList<Explosion> explosions; // ������ �迭�� ���� �ҷ�����
-	public static ArrayList<Text> texts; // �ؽ�Ʈ�� �迭�� ���� �ҷ�����
+	// Player 클래스 참조 변수
+	public static Player player;
 
-	private long waveStartTimer; // �������� ���̺� ǥ�� �ð�
-	private long waveStartTimerDiff; // ���̺� ǥ�� �⺻ �ð�
-	private int waveNumber; // �������� ���̺� ��
-	private boolean waveStart; // ���̺� �۾� ǥ�� ��ŸƮ
-	private int waveDelay = 2000; // ���̺� ǥ�� ������
+	// 제네릭 타입 배열
+	public static ArrayList<Bullet> bullets;
+	public static ArrayList<Enemy> enemies;
+	public static ArrayList<Item> items;
+	public static ArrayList<Explosion> explosions;
+	public static ArrayList<Text> texts;
 
-	private long slowDownTimer; // �������� ������ Ÿ�̸�
-	private long slowDownTimerDiff; // �������� ������ �⺻ �ð�
-	private int slowDownLength = 6000; // �������� ������ �ð� ����
+	// wave text 시작 시각
+	private long waveStartTimer;
+	// wave text 시작 경과 시간
+	private long susWaveTime;
+	// waveNumber
+	private int waveNumber;
+	// wave text 시작 여부
+	private boolean waveStart;
+	// wave 지연 시간
+	private int waveDelay = 2000;
 
-	private long pauseTimer; // �Ͻ����� �ð�
-	private long pauseTimerDiff; // �Ͻ����� ��� �ð�
-	private long pauseLength = 3000;
+	// slow down item 구현을 위한 변수
+	// slow down item 적용 시작 시각
+	private long slowDownTimer;
+	// slow down item 시작 경과 시간
+	private long susSlowDownTime;
+	// slow down item 적용 시간
+	private int slowDownLength = 6000;
 
-	// public boolean Pause; // �Ͻ����� ����
+	// player freeze item 구현을 위한 변수
+	// player freeze item 적용 시작 시각
+	private long freezeTimer;
+	// player freeze item 시작 경과 시간
+	private long susFreezeTime;
+	// player freeze item 적용 시간
+	private long freezeLength = 3000;
 
-	private File startBGM = new File("sounds/startBGM.wav"); // �������
+	// 게임 재시작 여부
+	private boolean retry;
+
+	// 배경 음악 설정
+	private File startBGM = new File("sounds/startBGM.wav");
 	private AudioStream startBGMAudio;
 	private InputStream startBGMInput;
-	private File bonusSound = new File("sounds/bonusSound.wav"); // ������ ȿ����
+	// item 획득 효과음 설정
+	private File bonusSound = new File("sounds/bonusSound.wav");
 	private AudioStream bonusSoundAudio;
 	private InputStream bonusSoundInput;
-	private File gameoverSound = new File("sounds/gameoverSound.wav"); // ���ӿ��� ����
+	// 게임 오버 배경 음악
+	private File gameoverSound = new File("sounds/gameoverSound.wav");
 	private AudioStream gameoverSoundAudio;
 	private InputStream gameoverSoundInput;
 
-	private boolean retry;
-
+	// GamePanel 클래스 생성자
 	public GamePanel() {
-		super(); // ���� Ŭ���� ����
-		setPreferredSize(new Dimension(WIDTH, HEIGHT)); // �г��� ������ ����
-		setFocusable(true); // �гο� ��Ŀ�� Ȱ��ȭ
-		requestFocus(); // �гο� ��Ŀ���� ��û
 
+		// 부모 클래스인 JPanel 클래스 생성자 호출
+		super();
+		// 패널 크기 설정
+		setPreferredSize(new Dimension(WIDTH, HEIGHT));
+		// 패널 포커스 활성화
+		setFocusable(true);
+		// 패널에 포커스 요청
+		requestFocus();
 	}
 
 	public void addNotify() {
-		super.addNotify(); // addNotify�� �������� �����ְ� �ϴ� ����
+		// 프레임 보이기
+		super.addNotify();
+		// 스레드 생성 후 시작
 		if (thread == null) {
 			thread = new Thread(this);
 			thread.start();
 		}
-
-		addKeyListener(this); // Ű �̺�Ʈ Ȱ��ȭ
+		// 키 이벤트 활성화
+		addKeyListener(this);
 	}
 
 	public void run() {
 
-		running = true; // ���� �� ��� running�� true�� Ȱ��ȭ
+		// 게임 실행 여부 참으로 설정
+		running = true;
 
-		image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB); // image�� ����, ����, RGBŸ�� ����
-		g = (Graphics2D) image.getGraphics(); // g�� image ��ǥ ����ֱ�
+		// bufferedimage의 폭, 높이, RGB 타입 설정
+		image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+		// graphics2d에 bufferedimage의 좌표 설정
+		g = (Graphics2D) image.getGraphics();
+		// graphics2d 외곽선 처리 안티알리어싱 설정
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-		player = new Player(); // Player Ŭ���� ��ü ����
-		bullets = new ArrayList<Bullet>(); // �Ѿ� Ŭ���� ��ü ����
-		enemies = new ArrayList<Enemy>(); // �� Ŭ���� ��ü ����
-		items = new ArrayList<Item>(); // �Ŀ� �� Ŭ���� ��ü ����
-		explosions = new ArrayList<Explosion>(); // ���� Ŭ���� ��ü ����
-		texts = new ArrayList<Text>(); // �ؽ�Ʈ Ŭ���� ��ü ����
+		// Player 클래스 객체 생성
+		player = new Player();
+		// Bullet 클래스 객체 생성
+		bullets = new ArrayList<Bullet>();
+		// Enemy 클래스 객체 생성
+		enemies = new ArrayList<Enemy>();
+		// Item 클래스 객체 생성
+		items = new ArrayList<Item>();
+		// Explosion 클래스 객체 생성
+		explosions = new ArrayList<Explosion>();
+		// Text 클래스 객체 생성
+		texts = new ArrayList<Text>();
 
 		waveStartTimer = 0;
-		waveStartTimerDiff = 0;
+		susWaveTime = 0;
 		waveStart = true;
-		waveNumber = 0;
+		waveNumber = 8;
 
-		// �� FPS (Frame Per Second)�� ���ϱ� ���� ������
+		// 평균 FPS 계산을 위한 변수
 		long startTime;
 		long URDTimeMillis;
 		long waitTime;
 		long totalTime = 0;
 		long targetTime = 1000 / FPS;
 
-		// �ּ� �����Ӱ� �ִ� ������ ǥ��
+		// 최소 프레임과 최대 프레임
 		int frameCount = 0;
 		int maxFrameCount = 30;
 
 		while (running) {
-			startTime = System.nanoTime(); // FPS ����� ���� ���� ����
 
-			// game�� ���õ� ������Ʈ, ����, �׸� �ҷ�����
+			startTime = System.nanoTime();
+
+			// 게임 정보 업데이트
 			gameUpdate();
+			// 게임 렌더
 			gameRender();
+			// 게임 그래픽 구현
 			gameDraw();
 
-			URDTimeMillis = (System.nanoTime() - startTime) / 1000000; // FPS ���
-			waitTime = targetTime - URDTimeMillis; // ���ð�
+			// 대기 시간 계산
+			URDTimeMillis = (System.nanoTime() - startTime) / 1000000;
+			waitTime = targetTime - URDTimeMillis;
 
-			// ������� �ƴ� ����� ����ó��
 			try {
-				Thread.sleep(waitTime); // �۵� ����
+				// 프레임 수에 맞춰 게임 화면을 보이기 위해 대기 시간만큼 스레드 일시 정지
+				Thread.sleep(waitTime);
 			} catch (Exception e) {
-
 			}
 
-			totalTime += System.nanoTime() - startTime; // ���� �ð���
-			frameCount++; // ������ ī���� ����
+			totalTime += System.nanoTime() - startTime;
+			// 프레임 카운터 증가
+			frameCount++;
+			// 프레임 카운터가 최대 프레임 수인 경우 평균 프레임 계산
 			if (frameCount == maxFrameCount) {
-				averageFPS = (int) (1000 / ((totalTime / frameCount) / 1000000)); // ��� ������ ���
+				averageFPS = (int) (1000 / ((totalTime / frameCount) / 1000000));
 				frameCount = 0;
 				totalTime = 0;
 			}
-
 		}
-		if (waveNumber == 10)
-		// ���� �����
-		{
+
+		// waveNumber가 10인 경우
+		if (waveNumber == 10) {
 			g.setColor(new Color(0, 0, 0));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
+
+			String s = "Y O U   W I N";
 			g.setColor(Color.WHITE);
 			g.setFont(new Font("Century Gothic", Font.PLAIN, 16));
-			String s = "Y O U   W I N";
-			AudioPlayer.player.start(gameoverSoundAudio);
 			int length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2);
+			AudioPlayer.player.start(gameoverSoundAudio);
 
 			s = "Score : " + player.getScore();
 			length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
@@ -160,24 +216,27 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2 + 75);
 			gameDraw();
+
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			if (retry == true)
-
 				run();
-		} else {
+		}
+		// waveNumber가 10이 아닌 경우
+		else {
+
 			g.setColor(new Color(0, 0, 0));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
+
+			String s = "G A M E   O V E R";
 			g.setColor(Color.WHITE);
 			g.setFont(new Font("Century Gothic", Font.PLAIN, 16));
-			String s = "G A M E   O V E R";
-			AudioPlayer.player.start(gameoverSoundAudio);
 			int length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2);
+			AudioPlayer.player.start(gameoverSoundAudio);
 
 			s = "Score : " + player.getScore();
 			length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
@@ -199,39 +258,44 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 			if (retry == true)
 				run();
-
 		}
 	}
 
-	// ���ӿ��� ��������� ��ȭ �Ǵ� �κ�
+	// 게임 정보 업데이트
+	// 상시적으로 변화
 	private void gameUpdate() {
-		player.setPause(player.freeze);
+
+		// player
+		player.setFreeze(player.freeze);
 		player.setPpause(player.Ppause);
 		for (int i = 0; i < enemies.size(); i++) {
 			enemies.get(i).setEpause(enemies.get(i).Epause);
 		}
-		// ���ο� ���̺�
+
+		// wave 시작 시각이 0이고 enemy 수가 0인 경우 wave 정보 설정
 		if (waveStartTimer == 0 && enemies.size() == 0) {
 			waveNumber++;
 			waveStart = false;
 			waveStartTimer = System.nanoTime();
-		} else {
-			waveStartTimerDiff = (System.nanoTime() - waveStartTimer) / 1000000;
-			if (waveStartTimerDiff > waveDelay) {
+		}
+		// wave 시작 시각이 0이 아니거나 enemy 수가 0이 아닌 경우
+		else {
+			susWaveTime = (System.nanoTime() - waveStartTimer) / 1000000;
+			if (susWaveTime > waveDelay) {
 				waveStart = true;
 				waveStartTimer = 0;
-				waveStartTimerDiff = 0;
+				susWaveTime = 0;
 			}
 		}
 
-		// �� ����
+		// wave가 시작되고 enemy가 생성되지 않은 경우
 		if (waveStart && enemies.size() == 0) {
 			createNewEnemies();
 		}
-		// �÷��̾� ������Ʈ
+		// player 정보 업데이트
 		player.update();
 
-		// �Ѿ� ������Ʈ
+		// bullet 정보 업데이트
 		for (int i = 0; i < bullets.size(); i++) {
 			boolean remove = bullets.get(i).update();
 			if (remove) {
@@ -240,23 +304,21 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 		}
 
-		// �� ������Ʈ
+		// enemy 정보 업데이트
 		for (int i = 0; i < enemies.size(); i++) {
 			enemies.get(i).update();
-
 		}
 
-		// �Ŀ� �� ������Ʈ
+		// item 정보 업데이트
 		for (int i = 0; i < items.size(); i++) {
 			boolean remove = items.get(i).update();
 			if (remove) {
 				items.remove(i);
 				i--;
-
 			}
 		}
 
-		// ���� ������Ʈ
+		// explosions 정보 업데이트
 		for (int i = 0; i < explosions.size(); i++) {
 			boolean remove = explosions.get(i).update();
 			if (remove) {
@@ -265,7 +327,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 		}
 
-		// �ؽ�Ʈ ������Ʈ
+		// text 정보 업데이트
 		for (int i = 0; i < texts.size(); i++) {
 			boolean remove = texts.get(i).update();
 			if (remove) {
@@ -274,15 +336,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 		}
 
-		// �Ѿ˿� ���� ��
+		// bullet으로부터 타격받은 enemy 처리
 		for (int i = 0; i < bullets.size(); i++) {
-			// �Ѿ��� ��ǥ
+
 			Bullet b = bullets.get(i);
 			double bx = b.getx();
 			double by = b.gety();
 			double br = b.getr();
 			for (int j = 0; j < enemies.size(); j++) {
-				// ���� ��ǥ
+
 				Enemy e = enemies.get(j);
 				double ex = e.getx();
 				double ey = e.gety();
@@ -292,56 +354,67 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 				double dy = by - ey;
 				double dist = Math.sqrt(dx * dx + dy * dy);
 
-				// ���� ��ǥ�� �Ѿ��� ��ǥ�� ��ġ�� ���
+				// bullet과 enemy 좌표 사이의 거리가 bullet과 enemy의 반지름의 길이보다 작은 경우
 				if (dist < br + er) {
 					e.hit();
 					bullets.remove(i);
 					i--;
 					break;
 				}
-
 			}
 		}
 
-		// �� ���� üũ
+		// enemy가 사망한 경우 item 드롭
 		for (int i = 0; i < enemies.size(); i++) {
+
 			if (enemies.get(i).isDead()) {
 				Enemy e = enemies.get(i);
 
-				// �Ŀ� ��
-				double rand = Math.random(); // �������� ������ ���
+				// item 드롭 확률을 난수로 설정
+				double rand = Math.random();
 				if (rand < 0.02)
+					// item 유형 1 - life up
 					items.add(new Item(1, e.getx(), e.gety()));
 				else if (rand < 0.04)
-					items.add(new Item(5, e.getx(), e.gety())); // score-100 item 추가
+					// item 유형 5 - score -100
+					items.add(new Item(5, e.getx(), e.gety()));
 				else if (rand < 0.07)
-					items.add(new Item(6, e.getx(), e.gety())); // item 추가
+					// item 유형 6 - player freeze
+					items.add(new Item(6, e.getx(), e.gety()));
 				else if (rand < 0.1)
-					items.add(new Item(4, e.getx(), e.gety())); // item 생성 확률 변경
+					// item 유형 4 - slow down
+					items.add(new Item(4, e.getx(), e.gety()));
 				else if (rand < 0.2)
-					items.add(new Item(3, e.getx(), e.gety())); // item 생성 확률 변경
+					// item 유형 3 - power up+2
+					items.add(new Item(3, e.getx(), e.gety()));
 				else if (rand < 0.3)
-					items.add(new Item(2, e.getx(), e.gety())); // item 생성 확률 변경
+					// item 유형 2 - power up+1
+					items.add(new Item(2, e.getx(), e.gety()));
 
+				// enemy 유형과 랭크에 비례해서 player 점수 증가
 				player.addScore(e.getType() * 50 + e.getRank() * 50);
+				// enemy 제거
 				enemies.remove(i);
 				i--;
-
+				// 랭크가 낮은 새로운 enemy 생성
 				e.explode();
-				explosions.add(new Explosion(e.getx(), e.gety(), e.getr(), e.getr() + 25, e.getType())); // 폭발 크기 변경
+				// enemy 폭발 효과 구현
+				explosions.add(new Explosion(e.getx(), e.gety(), e.getr(), e.getr() + 25, e.getType()));
 			}
 		}
 
-		// �÷��̾� ���� üũ
+		// player 사망 여부 확인 후 게임 실행 여부 설정
 		if (player.isDead()) {
 			running = false;
 		}
 
-		// �÷��̾� - �� �浹
+		// player가 회복 상태가 아닌 경우
 		if (!player.isRecovering()) {
+
 			int px = player.getx();
 			int py = player.gety();
 			int pr = player.getr();
+
 			for (int i = 0; i < enemies.size(); i++) {
 
 				Enemy e = enemies.get(i);
@@ -354,17 +427,17 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 				double dy = py - ey;
 				double dist = Math.sqrt(dx * dx + dy * dy);
 
-				if (dist < pr + er) {
+				// player와 enemy 좌표 사이의 거리가 player와 enemy의 반지름의 합보다 작은 경우
+				// 충돌한 경우 life 수 감소
+				if (dist < pr + er)
 					player.lostLife();
-				}
-
 			}
 		}
 
-		// �÷��̾� �Ŀ� ��
 		int px = player.getx();
 		int py = player.gety();
 		int pr = player.getr();
+
 		for (int i = 0; i < items.size(); i++) {
 			Item p = items.get(i);
 			double x = p.getx();
@@ -374,54 +447,57 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			double dy = py - y;
 			double dist = Math.sqrt(dx * dx + dy * dy);
 
-			// �Ŀ� �� ȿ��
+			// player와 item 사이의 거리가 player와 enemy의 반지름의 합보다 작은 경우
 			if (dist < pr + r) {
 				int type = p.getType();
-
+				// item 유형 1 - life up
 				if (type == 1) {
 					player.gainLife();
 					texts.add(new Text(player.getx(), player.gety(), 2000, "Life+"));
 					AudioPlayer.player.start(bonusSoundAudio);
 				}
-				if (type == 2) {
+				// item 유형 2 - power up+1
+				else if (type == 2) {
 					player.increasePower(1);
 					texts.add(new Text(player.getx(), player.gety(), 2000, "Power Up +1"));
 					AudioPlayer.player.start(bonusSoundAudio);
 				}
-				if (type == 3) {
+				// item 유형 3 - power up+2
+				else if (type == 3) {
 					player.increasePower(2);
 					texts.add(new Text(player.getx(), player.gety(), 2000, "Power Up +2"));
 					AudioPlayer.player.start(bonusSoundAudio);
 				}
-				if (type == 4) {
+				// item 유형 4 - slow down
+				else if (type == 4) {
 					slowDownTimer = System.nanoTime();
-					for (int j = 0; j < enemies.size(); j++) {
+					for (int j = 0; j < enemies.size(); j++)
 						enemies.get(j).setSlow(true);
-					}
 					texts.add(new Text(player.getx(), player.gety(), 2000, "Slow Down"));
 					AudioPlayer.player.start(bonusSoundAudio);
 				}
-				if (type == 5) {
+				// item 유형 5 - score-100
+				else if (type == 5) {
 					player.addScore(-100);
 					texts.add(new Text(player.getx(), player.gety(), 2000, "score -100"));
 					AudioPlayer.player.start(bonusSoundAudio);
 				}
-				if (type == 6) {
-					pauseTimer = System.nanoTime();
-					player.setPause(true);
-					texts.add(new Text(player.getx(), player.gety(), 2000, "Player Pause"));
+				// item 유형 6 - player freeze
+				else if (type == 6) {
+					freezeTimer = System.nanoTime();
+					player.setFreeze(true);
+					texts.add(new Text(player.getx(), player.gety(), 2000, "Player freeze"));
 					AudioPlayer.player.start(bonusSoundAudio);
-
 				}
 				items.remove(i);
 				i--;
 			}
 		}
 
-		// �������� ������ ������Ʈ
+		// slow down item 업데이트
 		if (slowDownTimer != 0) {
-			slowDownTimerDiff = (System.nanoTime() - slowDownTimer) / 1000000;
-			if (slowDownTimerDiff > slowDownLength) {
+			susSlowDownTime = (System.nanoTime() - slowDownTimer) / 1000000;
+			if (susSlowDownTime > slowDownLength) {
 				slowDownTimer = 0;
 				for (int j = 0; j < enemies.size(); j++) {
 					enemies.get(j).setSlow(false);
@@ -429,16 +505,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 		}
 
-		if (pauseTimer != 0) // pause item 구현
-		{
-			pauseTimerDiff = (System.nanoTime() - pauseTimer) / 1000000;
-			if (pauseTimerDiff > pauseLength) {
-				pauseTimer = 0;
-				player.setPause(false);
+		// player freeze item 업데이트
+		if (freezeTimer != 0) {
+			susFreezeTime = (System.nanoTime() - freezeTimer) / 1000000;
+			if (susFreezeTime > freezeLength) {
+				freezeTimer = 0;
+				player.setFreeze(false);
 			}
 		}
 
-		// BGM
+		// 게임 배경음악 설정
 		try {
 			startBGMInput = new FileInputStream(startBGM);
 			startBGMAudio = new AudioStream(startBGMInput);
@@ -448,126 +524,130 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			gameoverSoundAudio = new AudioStream(gameoverSoundInput);
 		} catch (IOException e) {
 		}
-
 	}
 
-	// ȭ�� �� ǥ��
+	// game 그래픽 구현
 	private void gameRender() {
-		// ��� �̹��� ����
+		// game 배경 그래픽 구현
 		g.setColor(new Color(0, 0, 0));
 		g.fillRect(0, 0, WIDTH, HEIGHT);
 		g.setColor(Color.WHITE);
 
-		// �������� ������ ȭ�� ����
+		// slow down item 적용할 경우
 		if (slowDownTimer != 0) {
 			g.setColor(new Color(255, 255, 255, 64));
 			g.fillRect(0, 0, WIDTH, HEIGHT);
 		}
-		// �÷��̾� ��ü �̹��� ����
-		player.draw(g); // ;; -> ;
 
-		// �Ѿ� �̹��� ����
+		// player 그래픽 구현
+		player.draw(g);
+
+		// bullet 그래픽 구현
 		for (int i = 0; i < bullets.size(); i++) {
 			bullets.get(i).draw(g);
 		}
 
-		// �� �̹��� ����
+		// enemy 그래픽 구현
 		for (int i = 0; i < enemies.size(); i++) {
 			enemies.get(i).draw(g);
 		}
 
-		// �Ŀ� �� �̹��� ����
+		// item 그래픽 구현
 		for (int i = 0; i < items.size(); i++) {
 			items.get(i).draw(g);
 		}
 
-		// ���� �̹��� ����
+		// explosion 그래픽 구현
 		for (int i = 0; i < explosions.size(); i++) {
 			explosions.get(i).draw(g);
 		}
 
-		// �ؽ�Ʈ ǥ��
+		// text 그래픽 구현
 		for (int i = 0; i < texts.size(); i++) {
 			texts.get(i).draw(g);
 		}
 
-		// ���̺� ���� ǥ��
+		// waveNumber 그래픽 구현
 		if (waveStartTimer != 0) {
-			g.setFont(new Font("Century Gothic", Font.PLAIN, 18));
-			String s = " - W A V E   " + waveNumber + "   -";
+
+			String s;
+			if (waveNumber < 9)
+				s = " - W A V E   " + waveNumber + "   - ";
+			else
+				s = " - F I N A L   W A V E - ";
 			int length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
-			int alpha = (int) (255 * Math.sin(3.14 * waveStartTimerDiff / waveDelay));
+			int alpha = (int) (255 * Math.sin(3.14 * susWaveTime / waveDelay));
 			if (alpha > 255)
 				alpha = 255;
 			g.setColor(new Color(255, 255, 255, alpha));
-			g.drawString(s, WIDTH / 2 - length / 2, HEIGHT / 2);
+			g.setFont(new Font("Century Gothic", Font.PLAIN, 18));
+			g.drawString(s, WIDTH / 2 - length / 2 - 25, HEIGHT / 2);
 		}
 
-		// �÷��̾� ��� ǥ��
+		// player life 그래픽 구현
 		for (int i = 0; i < player.getLifes(); i++) {
-			g.setColor(Color.PINK); // Life up item 과 색상 동일하게 변경
+			g.setColor(Color.PINK);
 			g.fillOval(20 + (20 * i), 20, player.getr() * 2, player.getr() * 2);
 		}
 
-		// ���� ǥ��
+		// 게임 방법 그래픽 구현
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Century Gothic", Font.PLAIN, 14));
 		g.drawString("Use rudder to move", 18, 80);
 		g.drawString("Press space bar to attack", 18, 95);
-		g.drawString("'S' to pause", 18, 110);
+		g.drawString("'S' to freeze", 18, 110);
 		g.drawString("'A' to resume", 18, 125);
 
-		// �÷��̾� �Ŀ� ǥ��
-
-		g.setStroke(new BasicStroke(2));
+		// 파워 정보 그래픽 구현
 		g.setColor(Color.YELLOW);
 		g.fillRect(20, 40, player.getPower() * 8, 8);
+
 		g.setColor(Color.YELLOW);
 		g.setStroke(new BasicStroke(2));
 		for (int i = 0; i < player.getRequiredPower(); i++) {
 			g.drawRect(20 + 8 * i, 40, 8, 8);
 		}
 
-		// ���� ǥ��
+		// 점수와 wave 정보 그래픽 구현
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Century Gothic", Font.PLAIN, 14));
 		g.drawString("Score  : " + player.getScore(), WIDTH - 100, 30);
 		g.drawString("Wave : " + waveNumber, WIDTH - 100, 50);
 
-		// �������� ������ ǥ��
+		// slow down item 적용할 경우
 		if (slowDownTimer != 0) {
 			g.setColor(Color.WHITE);
 			g.drawRect(20, 55, 100, 8);
-			g.fillRect(20, 55, (int) (100 - 100 * slowDownTimerDiff / slowDownLength), 8);
+			g.fillRect(20, 55, (int) (100 - 100 * susSlowDownTime / slowDownLength), 8);
 		}
 	}
 
-	// �̹��� �׸���
+	// 게임 그래픽 구현
 	private void gameDraw() {
 		Graphics g2 = this.getGraphics();
 		g2.drawImage(image, 0, 0, null);
 		g2.dispose();
 	}
 
-	// �� ����
+	// enemy 생성
 	private void createNewEnemies() {
 		enemies.clear();
 		Enemy e;
 
-		// 1ź
+		// wave 1
 		if (waveNumber == 1) {
 			AudioPlayer.player.start(startBGMAudio);
 			for (int i = 0; i < 5; i++) {
 				enemies.add(new Enemy(1, 1));
 			}
 		}
-		// 2ź
+		// wave 2
 		if (waveNumber == 2) {
 			for (int i = 0; i < 10; i++) {
 				enemies.add(new Enemy(1, 1));
 			}
 		}
-		// 3ź
+		// wave 3
 		if (waveNumber == 3) {
 			for (int i = 0; i < 5; i++) {
 				enemies.add(new Enemy(1, 1));
@@ -575,7 +655,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			enemies.add(new Enemy(1, 2));
 			enemies.add(new Enemy(1, 2));
 		}
-		// 4ź
+		// wave 4
 		if (waveNumber == 4) {
 			enemies.add(new Enemy(1, 3));
 			enemies.add(new Enemy(1, 4));
@@ -583,13 +663,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 				enemies.add(new Enemy(2, 1));
 			}
 		}
-		// 5ź
+		// wave 5
 		if (waveNumber == 5) {
 			enemies.add(new Enemy(1, 4));
 			enemies.add(new Enemy(1, 3));
 			enemies.add(new Enemy(2, 3));
 		}
-		// 6ź
+		// wave 6
 		if (waveNumber == 6) {
 			enemies.add(new Enemy(1, 3));
 			for (int i = 0; i < 5; i++) {
@@ -597,19 +677,19 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 				enemies.add(new Enemy(3, 1));
 			}
 		}
-		// 7ź
+		// wave 7
 		if (waveNumber == 7) {
 			enemies.add(new Enemy(1, 3));
 			enemies.add(new Enemy(2, 3));
 			enemies.add(new Enemy(3, 3));
 		}
-		// 8ź
+		// wave 8
 		if (waveNumber == 8) {
 			enemies.add(new Enemy(1, 4));
 			enemies.add(new Enemy(2, 4));
 			enemies.add(new Enemy(3, 4));
 		}
-		// 9ź
+		// final wave
 		if (waveNumber == 9) {
 			for (int i = 0; i < 10; i++) {
 				enemies.add(new Enemy(1, 1));
@@ -622,13 +702,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 		}
 	}
 
-	// Ű �Է� �̺�Ʈ
+	// 키 입력 이벤트
 	public void keyTyped(KeyEvent e) {
 	}
 
 	public void keyPressed(KeyEvent e) {
 		int keyCode = e.getKeyCode();
-		// �� �� �� �� ��ü ������ �Է½�
+		// 방향 키가 눌린 경우 player 이동 방향을 참으로 설정
 		if (keyCode == KeyEvent.VK_LEFT) {
 			player.setLeft(true);
 		}
@@ -641,35 +721,37 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 		if (keyCode == KeyEvent.VK_DOWN) {
 			player.setDown(true);
 		}
-		// ���ݹ�ư (�����̽���)�� ������ ��
+		// space bar가 눌린 경우 player bullet 발사 여부를 참으로 설정
 		if (keyCode == KeyEvent.VK_SPACE) {
 			player.setFiring(true);
 		}
-		// ESC ��ư ������ �� ���� ����
+		// ESC 키가 눌린 경우 종료
 		if (keyCode == KeyEvent.VK_ESCAPE) {
 			System.exit(0);
 		}
-		if (keyCode == KeyEvent.VK_R) {
-			retry = true;
-		}
+		// s키가 눌린 경우 enemy와 player 일시 정지 여부를 참으로 설정
 		if (keyCode == KeyEvent.VK_S) {
 			for (int i = 0; i < enemies.size(); i++) {
 				enemies.get(i).setEpause(true);
 			}
 			Player.setPpause(true);
 		}
+		// a키가 눌린 경우 enemy와 player 일시 정지 여부를 거짓으로 설정
 		if (keyCode == KeyEvent.VK_A) {
 			Player.setPpause(false);
 			for (int i = 0; i < enemies.size(); i++) {
 				enemies.get(i).setEpause(false);
 			}
 		}
-
+		// r키카 눌린 경우 재시작 여부를 참으로 설정
+		if (keyCode == KeyEvent.VK_R) {
+			retry = true;
+		}
 	}
 
 	public void keyReleased(KeyEvent e) {
 		int keyCode = e.getKeyCode();
-		// �� �� �� �� ��ü ������ �Է� �����
+		// 방향 키 눌림이 끝난 경우 player 이동 방향을 거짓으로 설정
 		if (keyCode == KeyEvent.VK_LEFT) {
 			player.setLeft(false);
 		}
@@ -682,10 +764,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 		if (keyCode == KeyEvent.VK_DOWN) {
 			player.setDown(false);
 		}
-		// ���ݹ�ư (�����̽���)�� �׸� ������ ��
+		// space bar키 눌림이 끝난 경우 player bullet 발사 여부를 거짓으로 설정
 		if (keyCode == KeyEvent.VK_SPACE) {
 			player.setFiring(false);
 		}
+		// r 키 눌림이 끝난 경우 재시작 여부를 거짓으로 설정
 		if (keyCode == KeyEvent.VK_R) {
 			retry = false;
 		}

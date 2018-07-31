@@ -5,7 +5,7 @@ public class Enemy {
 	// enemy 좌표
 	private double x;
 	private double y;
-	
+
 	// enemy 반지름
 	private int r;
 
@@ -21,11 +21,11 @@ public class Enemy {
 
 	// enemy 체력
 	private int health;
-	
-	//enemy 유형
+
+	// enemy 유형
 	private int type;
-	
-	//enemy 랭크
+
+	// enemy 랭크
 	private int rank;
 
 	// enemy 색상
@@ -54,15 +54,15 @@ public class Enemy {
 		this.type = type;
 		this.rank = rank;
 		Epause = false;
-		
+
 		// enemy 체력과 속력은 반비례, 체력과 반지름은 비례
 		// enemy 유형 1 - 기본
 		if (type == 1) {
 			ecolor = Color.LIGHT_GRAY;
 			if (rank == 1) {
-				speed = 5; 
+				speed = 5;
 				r = 7;
-				health = 1; 
+				health = 1;
 			} else if (rank == 2) {
 				speed = 5;
 				r = 10;
@@ -80,7 +80,7 @@ public class Enemy {
 
 		// enemy 유형 2 - 속력 증가
 		else if (type == 2) {
-			ecolor = Color.BLUE; 
+			ecolor = Color.BLUE;
 			if (rank == 1) {
 				speed = 7;
 				r = 7;
@@ -121,7 +121,7 @@ public class Enemy {
 				health = 8;
 			}
 		}
-		
+
 		// enemy 시작 좌표를 난수로 설정
 		x = Math.random() * GamePanel.WIDTH / 2 + GamePanel.WIDTH / 4;
 		y = -r;
@@ -162,7 +162,7 @@ public class Enemy {
 	public boolean isDead() {
 		return dead;
 	}
-	
+
 	public void setSlow(boolean b) {
 		slow = b;
 	}
@@ -170,8 +170,6 @@ public class Enemy {
 	public void setEpause(boolean b) {
 		Epause = b;
 	}
-
-	
 
 	// enemy가 bullet으로부터 타격 받을 시 실행
 	// 체력 감소, 사망 상태 판단, 타격 받은 시각 설정
@@ -188,7 +186,7 @@ public class Enemy {
 	// 생성할 enemy 수 설정, 새로운 enemy 생성
 	public void explode() {
 		int amount = 0;
-		//enemy 랭크가 1보다 클 경우 생성할 enemy 수 설정
+		// enemy 랭크가 1보다 클 경우 생성할 enemy 수 설정
 		if (rank > 1) {
 			if (type == 1) {
 				amount = 3;
@@ -219,31 +217,34 @@ public class Enemy {
 
 	// enemy 기본 정보 업데이트
 	public void update() {
-		
+
 		// slow down item을 사용할 경우
-		if (slow) { 
+		if (slow) {
+
 			// 속력 감소
 			x += dx * 0.1;
 			y += dy * 0.1;
-		} 
+		}
 		// slow down item을 사용하지 않을 경우
 		else {
+
 			// pause 상태가 아닐 경우 이동할 거리 설정
-			if (Epause != true) { 
+			if (Epause != true) {
 				x += dx;
 				y += dy;
 			}
 		}
-		
+
 		// enemy가 준비 상태가 아닐 경우
 		if (!ready) {
+
 			// enemy가 panel 범위 안이라면 준비 상태를 참으로 설정
 			if (x > r && x < GamePanel.WIDTH - r && y > r && y < GamePanel.HEIGHT - r) {
 				ready = true;
 			}
 		}
 
-		// 이동할 좌표가 panel 범위를 벗어난 경우 이동할 좌표 재설정
+		// 이동할 좌표가 panel 범위를 벗어난 경우 이동할 거리 재설정
 		if (x < r && dx < 0)
 			dx = -dx;
 		if (y < r && dy < 0)
@@ -252,9 +253,10 @@ public class Enemy {
 			dx = -dx;
 		if (y > GamePanel.HEIGHT - r && dy > 0)
 			dy = -dy;
-		
-		// bullet으로부터 타격받은 경우	
+
+		// bullet으로부터 타격받은 경우
 		if (hit) {
+
 			// 타격 후 경과 시간이 50이상일 경우 타격 상태를 거짓으로 전환
 			long elapsed = (System.nanoTime() - hitTimer) / 1000000;
 			if (elapsed > 50) {
@@ -266,14 +268,17 @@ public class Enemy {
 
 	// enemy 그래픽 구현
 	public void draw(Graphics2D g) {
-		// bullet으로부터 타격받았을 경우
+
+		// bullet으로부터 타격받은 경우
 		if (hit) {
-			g.setColor(Color.WHITE);  
-			g.fillOval((int) (x - r), (int) (y - r), 2 * r, 2 * r); 
-			g.setColor(Color.WHITE.darker());
+			g.setColor(Color.WHITE);
 			g.fillOval((int) (x - r), (int) (y - r), 2 * r, 2 * r);
+
+			g.setColor(Color.WHITE.darker());
+			g.setStroke(new BasicStroke(2));
+			g.drawOval((int) (x - r), (int) (y - r), 2 * r, 2 * r);
 		}
-		// bullet으로부터 타격받지 않았을 경우 
+		// bullet으로부터 타격받지 않은 경우
 		else {
 			g.setColor(ecolor);
 			g.fillOval((int) (x - r), (int) (y - r), 2 * r, 2 * r);

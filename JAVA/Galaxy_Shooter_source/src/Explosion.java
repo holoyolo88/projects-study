@@ -17,7 +17,7 @@ public class Explosion {
 
 	// Explosion 클래스 생성자
 	public Explosion(double x, double y, int r, int max, int type) {
-		
+
 		this.x = x;
 		this.y = y;
 		this.r = r;
@@ -29,8 +29,8 @@ public class Explosion {
 	// explosion 정보 업데이트
 	// enemy가 bullet으로부터 타격받 실행
 	public boolean update() {
-		
-		r += 2;	
+
+		r += 2;
 		if (r >= maxRadius) {
 			return true;
 		}
@@ -42,14 +42,15 @@ public class Explosion {
 	public void draw(Graphics2D g) {
 
 		// explosion 유형 1의 경우
-		if( type == 1)
-		g.setColor(Color.LIGHT_GRAY);
+		if (type == 1)
+			g.setColor(Color.LIGHT_GRAY);
 		// explosion 유형 2의 경우
-		else if( type == 2)
-		g.setColor(Color.BLUE);
+		else if (type == 2)
+			g.setColor(Color.BLUE);
 		// explosion 유형 3의 경우
-		else g.setColor(Color.GREEN);
-		
+		else
+			g.setColor(Color.GREEN);
+
 		g.setStroke(new BasicStroke(3));
 		g.drawOval((int) (x - r), (int) (y - r), 2 * r, 2 * r);
 	}
