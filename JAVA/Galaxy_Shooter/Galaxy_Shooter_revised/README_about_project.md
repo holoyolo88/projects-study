@@ -33,6 +33,6 @@ made SequenceDiagram using StarUML5.0
 made ActivityDiagram using StarUML5.0  
 ![activitydiagram_revised](https://user-images.githubusercontent.com/30407766/43567128-b4c1e08a-966b-11e8-8ab7-1b9729ac233d.jpg)
 
-2018-8-4
-added scoreboard using FileIO  
-revised the way of retrying the game
+2018-8-4  
+* added scoreboard using FileIO  
+* revised the way of retrying the game
