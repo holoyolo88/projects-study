@@ -10,9 +10,13 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
 
 import javax.swing.JPanel;
 
@@ -93,6 +97,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 	private AudioStream gameoverSoundAudio;
 	private InputStream gameoverSoundInput;
 
+	// 점수 기록 파일 입출력
+	private File file = new File("ScoreBoard.txt");
+	private FileReader fileReader;
+	private FileWriter fileWriter;
+
+	// 점수 보드
+	private int[] scoreBoard;
+
 	// GamePanel 클래스 생성자
 	public GamePanel() {
 
@@ -123,6 +135,31 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 		// 게임 실행 여부 참으로 설정
 		running = true;
 
+		// 점수 보드
+		scoreBoard = new int[6];
+
+		// 점수 기록 파일 스트림 연결
+		try {
+			fileReader = new FileReader(file);
+
+			char[] buffer = new char[100];
+			fileReader.read(buffer);
+
+			// 점수 문자열 생성
+			String scoreString = "";
+			for (char ch : buffer) {
+				scoreString += ch;
+			}
+			System.out.print(scoreString);
+
+			// 구분자를 이용해 점수 보드에 점수 설정
+			String[] stringScoreBoard = scoreString.split("\\|");
+			System.out.println(stringScoreBoard.length);
+			for (int i = 0; i < 6; i++) {
+				scoreBoard[i] = Integer.parseInt(stringScoreBoard[i]);
+			}
+		} catch (IOException e) {
+		}
 		// bufferedimage의 폭, 높이, RGB 타입 설정
 		image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 		// graphics2d에 bufferedimage의 좌표 설정
@@ -192,6 +229,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			}
 		}
 
+		// 점수 보드 업데이트
+		scoreBoardUpdate();
+
 		// waveNumber가 10인 경우
 		if (waveNumber == 10) {
 			g.setColor(new Color(0, 0, 0));
@@ -215,15 +255,32 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			s = "Press ESC to E X I T";
 			length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2 + 75);
-			gameDraw();
 
 			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				fileWriter = new FileWriter(file);
+				fileWriter.write(Integer.toString(scoreBoard[0]) + "|");
+				for (int i = 1; i < 6; i++) {
+					s = i + " place " + scoreBoard[6 - i];
+					length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
+					g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2 + 80 + i * 18);
+					fileWriter.write(Integer.toString(scoreBoard[i]) + "|");
+				}
+
+				fileWriter.close();
+				fileReader.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
-			if (retry == true)
-				run();
+
+			gameDraw();
+
+			// 재시작
+			while (true) {
+				System.out.println(retry);
+				if (retry == true)
+					break;
+			}
+			run();
 		}
 		// waveNumber가 10이 아닌 경우
 		else {
@@ -249,15 +306,31 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 			s = "Press ESC to E X I T";
 			length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2 + 80);
+			try {
+				fileWriter = new FileWriter(file);
+				fileWriter.write(Integer.toString(scoreBoard[0]) + "|");
+				for (int i = 1; i < 6; i++) {
+					s = i + " place " + scoreBoard[6 - i];
+					length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
+					g.drawString(s, (WIDTH - length) / 2, HEIGHT / 2 + 80 + i * 18 + 10);
+					fileWriter.write(Integer.toString(scoreBoard[i]) + "|");
+				}
+
+				fileWriter.close();
+				fileReader.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 
 			gameDraw();
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+
+			// 재시작
+			while (true) {
+				System.out.println(retry);
+				if (retry == true)
+					break;
 			}
-			if (retry == true)
-				run();
+			run();
 		}
 	}
 
@@ -574,16 +647,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
 			String s;
 			if (waveNumber < 9)
-				s = " - W A V E   " + waveNumber + "   - ";
+				s = " -  W A V E   " + waveNumber + "   - ";
 			else
-				s = " - F I N A L   W A V E - ";
+				s = " -  F I N A L   W A V E - ";
 			int length = (int) g.getFontMetrics().getStringBounds(s, g).getWidth();
 			int alpha = (int) (255 * Math.sin(3.14 * susWaveTime / susWaveTextTime));
 			if (alpha > 255)
 				alpha = 255;
 			g.setColor(new Color(255, 255, 255, alpha));
 			g.setFont(new Font("Century Gothic", Font.PLAIN, 18));
-			g.drawString(s, WIDTH / 2 - (length+1) / 2 - 25, HEIGHT / 2);
+			g.drawString(s, WIDTH / 2 - (length) / 2 - 25, HEIGHT / 2);
 		}
 
 		// player life 그래픽 구현
@@ -702,6 +775,18 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 		if (waveNumber == 10) {
 			running = false;
 		}
+	}
+
+	public void scoreBoardUpdate() {
+		// 점수 보드의 점수가 player 점수와 같은 경우 반환
+		for (int score : scoreBoard) {
+			if (score == player.getScore())
+				return;
+		}
+		// 점수 보드 0번을 player 점수로 설정
+		scoreBoard[0] = player.getScore();
+		// 점수 보드 점수 오름차순 정렬
+		Arrays.sort(scoreBoard);
 	}
 
 	// 키 입력 이벤트
