@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="Galaxy_Shooter/Galaxy_Shooter_primitive/src"/>
+	<classpathentry kind="src" path="Galaxy_Shooter/Galaxy_Shooter_revised/src"/>
+	<classpathentry kind="src" path="Tetris/Tetris_revised/src"/>
+	<classpathentry kind="lib" path="Galaxy_Shooter/Galaxy_Shooter_revised/Galaxy_Shooter_revised.jar"/>
+	<classpathentry kind="lib" path="Galaxy_Shooter/jl-1.0.1.jar"/>
+	<classpathentry kind="lib" path="Galaxy_Shooter/jmf.jar"/>
+	<classpathentry kind="lib" path="Tetris/Tetris_revised/Tetris_revised.jar"/>
+	<classpathentry kind="output" path="Galaxy_Shooter/Galaxy_Shooter_primitive/bin"/>
+</classpath>
