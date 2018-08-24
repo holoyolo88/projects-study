@@ -28,7 +28,7 @@ public class ChatterBoxClient extends Application {
 
 					Platform.runLater(() -> {
 						displayText("연결 완료 : " + socket.getRemoteSocketAddress());
-						btnConn.setText("Start");
+						btnConn.setText("Stop");
 						btnSend.setDisable(false);
 					});
 

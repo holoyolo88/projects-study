@@ -1,4 +1,4 @@
-﻿package ChatterBox_revised;
+﻿package ChatterBox_changedUI_addedFunctions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,8 +22,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 public class ChatterBoxServer extends Application {
-
+	// ExecutorService : 쓰레드풀 참조 변수
 	ExecutorService executorService;
+	// ServerSocket : 서버 소켓 참조 변수
 	ServerSocket serverSocket;
 	// Vector : 쓰레드에 안전한 컬렉션
 	List<Client> connections = new Vector<Client>();
@@ -37,10 +38,11 @@ public class ChatterBoxServer extends Application {
 				// CPU 코어의 수만큼 최대 스레드를 사용하는 스레드풀 생성
 				Runtime.getRuntime().availableProcessors());
 		try {
+			// 서버 소켓 생성
 			serverSocket = new ServerSocket();
 			// 포트 바인딩 : 서버에 멀티 IP가 할당된 경우 해당 IP로 접속 시에만 연결 수락
 			// new ServerSocket(5000)도 가능하나 IP 제한 불가
-			serverSocket.bind(new InetSocketAddress("10.156.147.211", 5000));
+			serverSocket.bind(new InetSocketAddress("localhost", 5001));
 
 		} catch (IOException e) {
 			if (!serverSocket.isClosed()) {
@@ -54,19 +56,21 @@ public class ChatterBoxServer extends Application {
 			@Override
 			public void run() {
 				Platform.runLater(() -> {
-					displayText("서버 시작");
-					btnStartStop.setText("Start");
+					displayText("Status | run server");
+					btnStartStop.setText("Stop");
 				});
 				while (true) {
-					try {// accept : 블로킹
+					try {
+						// accept : 연결 수락 전까지 블로킹
 						Socket socket = serverSocket.accept();
-						String message = "연결 수락 : " + socket.getRemoteSocketAddress()
+						String message = "Status | connecting with" + socket.getRemoteSocketAddress()
 								+ Thread.currentThread().getName();
+						// UI 변경
 						Platform.runLater(() -> displayText(message));
 
 						Client client = new Client(socket);
 						connections.add(client);
-						Platform.runLater(() -> displayText("연결 개수 : " + connections.size()));
+						Platform.runLater(() -> displayText("Status | connectings" + connections.size()));
 					} catch (Exception e) {
 						if (!serverSocket.isClosed()) {
 							stopServer();
@@ -76,6 +80,7 @@ public class ChatterBoxServer extends Application {
 				}
 			}
 		};
+		// submit : 쓰레드 풀의 작업 큐에 객체를 넣어 작업 처리를 요청
 		executorService.submit(runnable);
 	}
 
@@ -87,22 +92,21 @@ public class ChatterBoxServer extends Application {
 				client.socket.close();
 				iterator.remove();
 			}
-
-			// serverSocket NullPointerE
 			if (serverSocket != null && !serverSocket.isClosed())
 				serverSocket.close();
 			if (executorService != null && !executorService.isShutdown())
 				executorService.shutdownNow();
 
 			Platform.runLater(() -> {
-				displayText("서버 시작");
-				btnStartStop.setText("Stop");
+				displayText("Status | stop server");
+				btnStartStop.setText("Start");
 			});
 		} catch (Exception e) {
 		}
 	}
 
 	class Client {
+		// Socket : 소켓 참조 변수
 		Socket socket;
 
 		Client(Socket socket) {
@@ -115,30 +119,30 @@ public class ChatterBoxServer extends Application {
 				@Override
 				public void run() {
 					try {
+						while (true) {
 							byte[] byteArr = new byte[100];
 							InputStream is = socket.getInputStream();
 
-							int readByteCount = is.read(byteArr,0,byteArr.length);
+							int readByteCount = is.read(byteArr);
 
 							if (readByteCount == -1) {
 								throw new IOException();
 							}
-							String message = "요청 처리 : " + socket.getRemoteSocketAddress()
+							String message = "Status | request from" + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();
 							Platform.runLater(() -> displayText(message));
-						
 							String data = new String(byteArr, 0, readByteCount);
 
 							for (Client client : connections) {
-								if(client.socket!=socket)
-								client.send(data);
+								// 연결된 소켓을 제외한 모든 소켓에 data 전송
+								if (client.socket != socket)
+									client.send(data);
 							}
-						
+						}
 					} catch (IOException e) {
 						try {
-							// why?
 							connections.remove(Client.this);
-							String message = "클라이언트 통신 불가 : " + socket.getRemoteSocketAddress()
+							String message = "Status | connecting failed with " + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();
 							Platform.runLater(() -> displayText(message));
 							socket.close();
@@ -162,12 +166,11 @@ public class ChatterBoxServer extends Application {
 						os.flush();
 					} catch (IOException e) {
 						try {
-							String message = "통신 불가 : " + socket.getRemoteSocketAddress()
+							String message = "Status | connecting failed" + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();
 							Platform.runLater(() -> displayText(message));
 							socket.close();
 						} catch (IOException e1) {
-							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 
@@ -199,7 +202,7 @@ public class ChatterBoxServer extends Application {
 		btnStartStop.setOnAction(e -> {
 			if (btnStartStop.getText().equals("Start")) {
 				startServer();
-			} else if (btnStartStop.getText().equals("Start")) {
+			} else if (btnStartStop.getText().equals("Stop")) {
 				stopServer();
 			}
 		});
@@ -207,7 +210,6 @@ public class ChatterBoxServer extends Application {
 		root.setBottom(btnStartStop);
 
 		Scene scene = new Scene(root);
-		//scene.getStylesheets().add(getClass().getResource("app.css").toString());
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Server");
 		primaryStage.setOnCloseRequest(event -> stopServer());
@@ -218,9 +220,7 @@ public class ChatterBoxServer extends Application {
 		txtDisplay.appendText(text + "\n");
 	}
 
-
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		launch(args);
 	}
 }

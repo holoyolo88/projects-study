@@ -55,7 +55,7 @@ public class ChatterBoxServer extends Application {
 			public void run() {
 				Platform.runLater(() -> {
 					displayText("서버 시작");
-					btnStartStop.setText("Start");
+					btnStartStop.setText("Stop");
 				});
 				while (true) {
 					try {// accept : 블로킹
@@ -88,8 +88,6 @@ public class ChatterBoxServer extends Application {
 				iterator.remove();
 			}
 
-			for (Client client : connections)
-				client.socket.close();
 			// serverSocket NullPointerE
 			if (serverSocket != null && !serverSocket.isClosed())
 				serverSocket.close();
@@ -97,8 +95,8 @@ public class ChatterBoxServer extends Application {
 				executorService.shutdownNow();
 
 			Platform.runLater(() -> {
-				displayText("서버 시작");
-				btnStartStop.setText("Stop");
+				displayText("서버 멈춤");
+				btnStartStop.setText("Start");
 			});
 		} catch (Exception e) {
 		}
@@ -129,7 +127,6 @@ public class ChatterBoxServer extends Application {
 							String message = "요청 처리 : " + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();
 							Platform.runLater(() -> displayText(message));
-							System.out.println(readByteCount);
 							String data = new String(byteArr, 0, readByteCount);
 
 							for (Client client : connections) {
@@ -201,7 +198,7 @@ public class ChatterBoxServer extends Application {
 		btnStartStop.setOnAction(e -> {
 			if (btnStartStop.getText().equals("Start")) {
 				startServer();
-			} else if (btnStartStop.getText().equals("Start")) {
+			} else if (btnStartStop.getText().equals("Stop")) {
 				stopServer();
 			}
 		});
