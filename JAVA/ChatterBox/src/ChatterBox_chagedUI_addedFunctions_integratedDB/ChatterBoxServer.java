@@ -59,9 +59,9 @@ public class ChatterBoxServer extends Application {
 			Class.forName(DRIVERNAME);
 
 			// change id into mysql id
-			String userId = "id";
+			String userId = "root";
 			// change password into mysql password
-			String userPassword = "password";
+			String userPassword = "Thgus69!";
 			// DriverManeger로 Connection 객체 생성
 			connect = DriverManager.getConnection(DBURL, userId, userPassword);
 
@@ -130,7 +130,7 @@ public class ChatterBoxServer extends Application {
 				serverSocket.close();
 			if (executorService != null && !executorService.isShutdown())
 				executorService.shutdownNow();
-			
+
 			Platform.runLater(() -> {
 				displayText("Status | server : stopped");
 				displayText("Status | DB : stopped");
@@ -158,37 +158,45 @@ public class ChatterBoxServer extends Application {
 				public void run() {
 					try {
 						statement = connect.createStatement();
+
+						byte[] byteArr = new byte[51];
+						InputStream is = socket.getInputStream();
+
+						int readByteCount = is.read(byteArr, 0, byteArr.length);
+
+						if (readByteCount == -1) {
+							throw new IOException();
+						}
+						String message = "Status | server : login request from" + socket.getRemoteSocketAddress()
+								+ Thread.currentThread().getName();
+						Platform.runLater(() -> displayText(message));
+						String data = new String(byteArr, 0, readByteCount);
+
+						String[] userData = data.split("/");
+						String classifier = userData[0];
+						String dataId = userData[1];
+						String dataPassword = userData[2];
+						ResultSet resultSet;
 						
-							byte[] byteArr = new byte[51];
-							InputStream is = socket.getInputStream();
+						if (classifier.equals("signup")) {
+							String SQL_INSERT = "INSERT INTO chatterboxuser VALUES('" + dataId + "','" + dataPassword + "')";
+							// executeUpdate : UPDATE, INSERT, DELETE
+							int flag  = statement.executeUpdate(SQL_INSERT);}
 
-							int readByteCount = is.read(byteArr,0,byteArr.length);
-
-							if (readByteCount == -1) {
-								throw new IOException();
-							}
-							String message = "Status | server : login request from" + socket.getRemoteSocketAddress()
-									+ Thread.currentThread().getName();
-							Platform.runLater(() -> displayText(message));
-							String data = new String(byteArr, 0, readByteCount);
+						// executeQuery : SELECT
+							String SQL_SELECT = "SELECT * FROM chatterboxuser WHERE id='" + dataId + "' AND password='"+ dataPassword + "'";
+							resultSet = statement.executeQuery(SQL_SELECT);
 							
-							String[] userdata = data.split("/");
-							String dataId = userdata[0];
-							String dataPassword = userdata[1];
-							System.out.println(dataId);
-							System.out.println(dataPassword);
-							
-							String SQL = "SELECT * FROM chatterboxuser WHERE id='"+dataId+"' AND password='"+dataPassword+"'";
-							ResultSet resultSet = statement.executeQuery(SQL);
-							if(resultSet!=null) {
+							if (resultSet.next()) {
 								sendResult("true");
-								System.out.println("true");}
-							else {
+								receive();
+							} else {
 								sendResult("false");
-								System.out.println("false");}
-					} catch(SQLException se) {
+							}
+
+					} catch (SQLException se) {
 						se.printStackTrace();
-					}catch (IOException e) {
+					} catch (IOException e) {
 						try {
 							connections.remove(Client.this);
 							String message = "Status | server : connecting failed with "
@@ -199,13 +207,12 @@ public class ChatterBoxServer extends Application {
 							e2.printStackTrace();
 						}
 					}
-					
+
 				}
 			};
 			executorService.submit(runnable);
 		}
-		
-		
+
 		void receive() {
 			Runnable runnable = new Runnable() {
 				@Override
@@ -245,7 +252,7 @@ public class ChatterBoxServer extends Application {
 			};
 			executorService.submit(runnable);
 		}
-		
+
 		void sendResult(String result) {
 			Runnable runnable = new Runnable() {
 				@Override
@@ -273,7 +280,6 @@ public class ChatterBoxServer extends Application {
 			};
 			executorService.submit(runnable);
 		}
-	
 
 		void send(String data) {
 			Runnable runnable = new Runnable() {

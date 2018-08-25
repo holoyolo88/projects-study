@@ -40,7 +40,7 @@ public class ChatterBoxClient extends Application {
 					// 소켓 생성
 					socket = new Socket();
 					//
-					socket.connect(new InetSocketAddress("localhost", 5001));
+					socket.connect(new InetSocketAddress("10.156.147.211", 5001));
 					// UI 변경
 					Platform.runLater(() -> {
 						displayStatusText("Status | server : connected with" + socket.getRemoteSocketAddress());
@@ -68,7 +68,6 @@ public class ChatterBoxClient extends Application {
 	void stopClient() {
 		try {
 			Platform.runLater(() -> {
-				displayStatusText("Status | disconnet waiting to press Start");
 				btnConn.setText("Start");
 				btnSend.setDisable(true);
 			});
@@ -96,12 +95,22 @@ public class ChatterBoxClient extends Application {
 			String data = new String(byteArrResult, 0, readByteCount, "UTF-8");
 			Platform.runLater(() ->
 				displayStatusText("Status | checked userData"));
-				
-			if (data.equals("true")){receive();}
+				System.out.println(data);
+			if (data.equals("true")){
+				Platform.runLater(()->{
+					Alert loginsucceess = new Alert(AlertType.INFORMATION);
+					loginsucceess.setTitle("INFORMATION");
+					loginsucceess.setHeaderText(null);
+					loginsucceess.setContentText("Login Succeed");
+					loginsucceess.showAndWait();});
+			receive();
+			}
 			else{
-				Platform.runLater(()->{Alert loginFail = new Alert(AlertType.ERROR);
-					loginFail.setTitle("alert");
-					loginFail.setContentText("login failed try again");
+				Platform.runLater(()->{
+					Alert loginFail = new Alert(AlertType.WARNING);
+					loginFail.setTitle("WARNING");
+					loginFail.setHeaderText(null);
+					loginFail.setContentText("Login failed, Try again");
 					loginFail.showAndWait();});
 				if(!socket.isClosed()) {
 					stopClient();}
@@ -324,7 +333,7 @@ public class ChatterBoxClient extends Application {
 		id = id.substring(0,20);
 		if(password.length()>20)
 		password=password.substring(0,20);
-		String data = id+"/"+password;
+		String data = "login/"+id+"/"+password;
 		sendData(data);
 		btnLogin.getScene().getWindow().hide();
 		});
@@ -339,7 +348,7 @@ public class ChatterBoxClient extends Application {
 		id = id.substring(0,20);
 		if(password.length()>20)
 		password=password.substring(0,20);
-		String data = id+"/"+password;
+		String data = "signup/"+id+"/"+password;
 		sendData(data);
 		btnSignUp.getScene().getWindow().hide();});
 		
