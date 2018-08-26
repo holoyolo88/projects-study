@@ -135,7 +135,6 @@ public class ChatterBoxServer extends Application {
 						}
 					} catch (IOException e) {
 						try {
-							// why?
 							connections.remove(Client.this);
 							String message = "클라이언트 통신 불가 : " + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();

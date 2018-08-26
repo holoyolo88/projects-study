@@ -79,7 +79,7 @@ public class ChatterBoxServer extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (connect != null || !serverSocket.isClosed())
-				stopServer();
+				stopServerAll();
 			return;
 		}
 
@@ -101,7 +101,7 @@ public class ChatterBoxServer extends Application {
 					} catch (Exception e) {
 						try {
 							if (!connect.isClosed() || !serverSocket.isClosed()) {
-								stopServer();
+								stopServerAll();
 							}
 						} catch (Exception e1) {
 							e.printStackTrace();
@@ -115,7 +115,7 @@ public class ChatterBoxServer extends Application {
 		executorService.submit(runnable);
 	}
 
-	void stopServer() {
+	void stopServerAll() {
 		try {
 			Iterator<Client> iterator = connections.iterator();
 			while (iterator.hasNext()) {
@@ -141,7 +141,7 @@ public class ChatterBoxServer extends Application {
 			e.printStackTrace();
 		}
 	}
-
+	
 	class Client {
 		// Socket : 소켓 참조 변수
 		Socket socket;
@@ -162,7 +162,7 @@ public class ChatterBoxServer extends Application {
 						byte[] byteArr = new byte[51];
 						InputStream is = socket.getInputStream();
 
-						int readByteCount = is.read(byteArr, 0, byteArr.length);
+						int readByteCount = is.read(byteArr);
 
 						if (readByteCount == -1) {
 							throw new IOException();
@@ -186,27 +186,45 @@ public class ChatterBoxServer extends Application {
 						// executeQuery : SELECT
 							String SQL_SELECT = "SELECT * FROM chatterboxuser WHERE id='" + dataId + "' AND password='"+ dataPassword + "'";
 							resultSet = statement.executeQuery(SQL_SELECT);
-							
+													
 							if (resultSet.next()) {
+								id = dataId;
 								sendResult("true");
+								sendData(dataId);
 								receive();
 							} else {
 								sendResult("false");
+								try {
+									Thread.sleep(3000);
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								}
+								connections.remove(Client.this);
+								String failmessage = "Status | server : connecting failed with "
+										+ socket.getRemoteSocketAddress() + Thread.currentThread().getName();
+								Platform.runLater(() -> displayText(failmessage));
+								socket.close();
 							}
-
-					} catch (SQLException se) {
-						se.printStackTrace();
-					} catch (IOException e) {
+					} catch (Exception e) {
+						e.printStackTrace();
+						sendResult("false");
 						try {
-							connections.remove(Client.this);
-							String message = "Status | server : connecting failed with "
-									+ socket.getRemoteSocketAddress() + Thread.currentThread().getName();
-							Platform.runLater(() -> displayText(message));
-							socket.close();
-						} catch (IOException e2) {
-							e2.printStackTrace();
+							Thread.sleep(3000);
+						} catch (InterruptedException ie) {
+							ie.printStackTrace();
 						}
-					}
+						connections.remove(Client.this);
+						String message = "Status | server : connecting failed with "
+								+ socket.getRemoteSocketAddress() + Thread.currentThread().getName();
+						Platform.runLater(() -> displayText(message));
+						try {
+							socket.close();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					} 
+					
 
 				}
 			};
@@ -266,6 +284,7 @@ public class ChatterBoxServer extends Application {
 						Platform.runLater(() -> displayText("sendResult"));
 					} catch (IOException e) {
 						try {
+							connections.remove(Client.this);
 							String message = "Status | server : connecting failed" + socket.getRemoteSocketAddress()
 									+ Thread.currentThread().getName();
 							Platform.runLater(() -> displayText(message));
@@ -280,6 +299,53 @@ public class ChatterBoxServer extends Application {
 			};
 			executorService.submit(runnable);
 		}
+		
+		void sendData(String dataId) {
+			Runnable runnable = new Runnable() {
+				@Override
+				public void run() {
+					try {
+						
+						String SQL_SELECT = "SELECT * FROM chatterboxrecord WHERE chatterBoxUser_id='"+dataId+"'";
+						ResultSet resultSet = statement.executeQuery(SQL_SELECT);
+						
+						if(resultSet.next()) {
+							// mysql의 문자셋 utf8mb4_0900_ai_ci 
+						byte[] byteArrReceived = resultSet.getBytes("received");
+							
+						OutputStream os = socket.getOutputStream();
+						os.write(byteArrReceived);
+						os.flush();
+						try {
+							Thread.sleep(500);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						byte[] byteArrSent = resultSet.getBytes("sent");
+						
+						os.write(byteArrReceived);
+						os.flush();
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						try {
+							connections.remove(Client.this);
+							String message = "Status | server : connecting failed" + socket.getRemoteSocketAddress()
+									+ Thread.currentThread().getName();
+							Platform.runLater(() -> displayText(message));
+							socket.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+
+					}
+
+				}
+			};
+			executorService.submit(runnable);
+		}
+	
+	
 
 		void send(String data) {
 			Runnable runnable = new Runnable() {
@@ -329,7 +395,7 @@ public class ChatterBoxServer extends Application {
 			if (btnStartStop.getText().equals("Start")) {
 				startServer();
 			} else if (btnStartStop.getText().equals("Stop")) {
-				stopServer();
+				stopServerAll();
 			}
 		});
 
@@ -338,7 +404,7 @@ public class ChatterBoxServer extends Application {
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Server");
-		primaryStage.setOnCloseRequest(event -> stopServer());
+		primaryStage.setOnCloseRequest(event -> stopServerAll());
 		primaryStage.show();
 	}
 

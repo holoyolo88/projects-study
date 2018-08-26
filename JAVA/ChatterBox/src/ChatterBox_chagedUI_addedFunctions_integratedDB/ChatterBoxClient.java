@@ -103,14 +103,27 @@ public class ChatterBoxClient extends Application {
 					loginsucceess.setHeaderText(null);
 					loginsucceess.setContentText("Login Succeed");
 					loginsucceess.showAndWait();});
-			receive();
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				receiveDataReceived();
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			receiveDataSent();
 			}
 			else{
 				Platform.runLater(()->{
 					Alert loginFail = new Alert(AlertType.WARNING);
 					loginFail.setTitle("WARNING");
 					loginFail.setHeaderText(null);
-					loginFail.setContentText("Login failed, Try again");
+					loginFail.setContentText("failed, Try again");
 					loginFail.showAndWait();});
 				if(!socket.isClosed()) {
 					stopClient();}
@@ -126,10 +139,9 @@ public class ChatterBoxClient extends Application {
 
 	}
 	
-	void receiveData() {
-		while(true) {
+	void receiveDataReceived() {
 		try {
-			byte[] byteArr = new byte[101];
+			byte[] byteArr = new byte[1200];
 			InputStream is = socket.getInputStream();
 			int readByteCount = is.read(byteArr);
 
@@ -139,16 +151,46 @@ public class ChatterBoxClient extends Application {
 			String data = new String(byteArr, 0, readByteCount, "UTF-8");
 			Platform.runLater(() -> {
 				displayReceivedText(data);
-				displaySentText("");
-				displayStatusText("Status | received message");
+				displayReceivedText("");
+				displayStatusText("Status | received receivdmessage");
 			});
 		} catch (Exception e) {
-			Platform.runLater(() -> displayStatusText("Status | connecting failed"));
+			e.printStackTrace();
+			Platform.runLater(() -> displayStatusText("Status | connecting failed receiving data"));
 			if (!socket.isClosed())
 				stopClient();
 		}
-		}
+		
 	}
+	
+	
+	void receiveDataSent() {
+		try {
+			byte[] byteArr = new byte[1200];
+			InputStream is = socket.getInputStream();
+			int readByteCount = is.read(byteArr);
+
+			if (readByteCount == -1) {
+				throw new IOException();
+			}
+			String data = new String(byteArr, 0, readByteCount, "UTF-8");
+			Platform.runLater(() -> {
+				displaySentText(data);
+				displaySentText("");
+				
+				displayStatusText("Status | received sentmessage");
+			});
+			receive();
+		} catch (Exception e) {
+			e.printStackTrace();
+			Platform.runLater(() -> displayStatusText("Status | connecting failed receiving data"));
+			if (!socket.isClosed())
+				stopClient();
+		}
+		
+	}
+
+	
 
 	void receive() {
 		while(true) {

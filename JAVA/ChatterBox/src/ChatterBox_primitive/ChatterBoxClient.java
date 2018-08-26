@@ -68,7 +68,6 @@ public class ChatterBoxClient extends Application {
 			try {
 				byte[] byteArr = new byte[100];
 				InputStream is = socket.getInputStream();
-				// read() : byte를 한번에 보낼 경우 연결이 끊어지면 보낼 수 없으므로 사용
 				int readByteCount = is.read(byteArr);
 
 				if (readByteCount == -1) {
