@@ -40,7 +40,7 @@ public class ChatterBoxServer extends Application {
 			serverSocket = new ServerSocket();
 			// 포트 바인딩 : 서버에 멀티 IP가 할당된 경우 해당 IP로 접속 시에만 연결 수락
 			// new ServerSocket(5000)도 가능하나 IP 제한 불가
-			serverSocket.bind(new InetSocketAddress("10.156.147.211", 5000));
+			serverSocket.bind(new InetSocketAddress("localhost", 5000));
 
 		} catch (IOException e) {
 			if (!serverSocket.isClosed()) {

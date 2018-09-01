@@ -24,7 +24,7 @@ public class ChatterBoxClient extends Application {
 			public void run() {
 				try {
 					socket = new Socket();
-					socket.connect(new InetSocketAddress("10.156.147.211", 5000));
+					socket.connect(new InetSocketAddress("localhost", 5000));
 
 					Platform.runLater(() -> {
 						displayText("연결 완료 : " + socket.getRemoteSocketAddress());
