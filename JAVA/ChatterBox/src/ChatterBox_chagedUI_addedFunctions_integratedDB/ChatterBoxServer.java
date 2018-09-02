@@ -79,7 +79,7 @@ public class ChatterBoxServer extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (connect != null || !serverSocket.isClosed())
-				stopAllServer();
+				stopServer();
 			return;
 		}
 
@@ -101,7 +101,7 @@ public class ChatterBoxServer extends Application {
 					} catch (Exception e) {
 						try {
 							if (!connect.isClosed() || !serverSocket.isClosed()) {
-								stopAllServer();
+								stopServer();
 							}
 						} catch (Exception e1) {
 							e.printStackTrace();
@@ -115,7 +115,7 @@ public class ChatterBoxServer extends Application {
 		executorService.submit(runnable);
 	}
 
-	void stopAllServer() {
+	void stopServer() {
 		try {
 			Iterator<Client> iterator = connections.iterator();
 			while (iterator.hasNext()) {
@@ -411,7 +411,7 @@ public class ChatterBoxServer extends Application {
 			if (btnStartStop.getText().equals("Start")) {
 				startServer();
 			} else if (btnStartStop.getText().equals("Stop")) {
-				stopAllServer();
+				stopServer();
 			}
 		});
 
@@ -420,7 +420,7 @@ public class ChatterBoxServer extends Application {
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Server");
-		primaryStage.setOnCloseRequest(event -> stopAllServer());
+		primaryStage.setOnCloseRequest(event -> stopServer());
 		primaryStage.show();
 	}
 

@@ -13,7 +13,7 @@ A client can also get previous chatting data.
 
 ## How To Make
 2018-8-25  
-made EntityRelationShip diagram and database using MySql
+made EntityRelationShipDiagram and database using MySql
 ![entityrelationshipdiagram](https://user-images.githubusercontent.com/30407766/44946893-b9e89400-ae3f-11e8-99f1-2665fa2894e1.png)
 
 
@@ -23,5 +23,9 @@ made UseCase using StarUML
 
 
 2018-9-1  
-made ClassDiagrma using EclipseObjectAid
+made ClassDiagrm using EclipseObjectAid
 ![classdiagram](https://user-images.githubusercontent.com/30407766/44946894-bead4800-ae3f-11e8-8808-0f8e981237bb.png)
+
+2018-9-2  
+made SequenceDiagram using StarUML  
+![sequencediagram](https://user-images.githubusercontent.com/30407766/44951707-28603d00-aea6-11e8-83e4-6809961f7635.png)
