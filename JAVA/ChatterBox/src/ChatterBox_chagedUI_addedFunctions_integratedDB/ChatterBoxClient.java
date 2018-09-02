@@ -173,11 +173,11 @@ public class ChatterBoxClient extends Application {
 			Platform.runLater(() -> {
 				displayReceivedText(data);
 				displayReceivedText("");
-				displayStatusText("Status | received receivedmessage");
+				displayStatusText("Status | receiving previous received messages please wait");
 			});
 		} catch (Exception e) {
 			e.printStackTrace();
-			Platform.runLater(() -> displayStatusText("Status | connecting failed receiving data"));
+			Platform.runLater(() -> displayStatusText("Status | connecting failed"));
 			if (!socket.isClosed())
 				stopClient();
 		}
@@ -197,12 +197,12 @@ public class ChatterBoxClient extends Application {
 				displaySentText(data);
 				displaySentText("");
 
-				displayStatusText("Status | received sentmessage");
+				displayStatusText("Status | receiving previous sent messages");
 			});
 			receiveMessage();
 		} catch (Exception e) {
 			e.printStackTrace();
-			Platform.runLater(() -> displayStatusText("Status | connecting failed receiving data"));
+			Platform.runLater(() -> displayStatusText("Status | connecting failed"));
 			if (!socket.isClosed())
 				stopClient();
 		}
@@ -249,7 +249,7 @@ public class ChatterBoxClient extends Application {
 					Platform.runLater(() -> {
 						displaySentText(data);
 						displayReceivedText("");
-						displayStatusText("Status | send message");
+						displayStatusText("Status | sent message");
 					});
 				} catch (Exception e) {
 					Platform.runLater(() -> displayStatusText("Status | connecting failed"));
@@ -279,7 +279,7 @@ public class ChatterBoxClient extends Application {
 		BorderPane root = new BorderPane();
 		root.setPrefSize(500, 300);
 
-		statusTxtDisplay = new Label("Status | waiting to press Start");
+		statusTxtDisplay = new Label("Status | press Start");
 		statusTxtDisplay.setPrefSize(500, 30);
 
 		receivedTxtDisplay = new TextArea();
