@@ -1,14 +1,18 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8" errorPage = "error.jsp"%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Index</title>
+<title>Login</title>
 </head>
 <body>
+
 	<h1 align="center">게시판</h1>
 	<hr />
 	<div align="center">
-		<form name="loginform" action="login.jsp">
+		<form name="loginform" method = "POST" action="control.jsp">
+		<input type=hidden name="action" value="insert" />
 			<table>
 				<tbody>
 					<tr>
@@ -27,5 +31,6 @@
 			</table>
 		</form>
 	</div>
+
 </body>
 </html>
