@@ -10,9 +10,8 @@
 <div>
 Error
 <hr/>
-<%=out.println("An Error is Occurred. Please Try Again.")
-%>
-<%=exception %>
+<%= "An Error is Occurred. Please Try Again." %>
+<%= exception %>
 </div>
 </body>
 </html>

@@ -1,7 +1,17 @@
+package source;
 
 public class Post {
 	private String id;
 	private String password;
+	
+	private String post;
+	
+	public String getPost() {
+		return post;
+	}
+	public void setPost(String post) {
+		this.post = post;
+	}
 	public String getId() {
 		return id;
 	}
